@@ -143,7 +143,7 @@ def encode(data, width, height, scale=1, private=0, fill='repeat', seed=None):
   result_size = width * height * 3
   max_data_size = result_size - HEADER_SIZE
   if len(data) > max_data_size:
-    raise ValueError('data too large, maximum is {0}'.format(max_data_size))
+    raise ValueError('data too large: {0} > {1} bytes'.format(len(data), max_data_size))
 
   result = bytearray()
   result.extend([width, height, scale])
@@ -295,7 +295,7 @@ def main():
   else:
     data = infile.read()
     if len(data) > MAX_ENCODE_SIZE:
-      parser.error('maximum encodable data size exceeded: {0} bytes'.format(len(data)))
+      parser.error('maximum encodable data size exceeded: {0} > {1} bytes'.format(len(data), MAX_ENCODE_SIZE))
     if args.compress is None:
       private = 0
     else:
