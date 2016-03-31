@@ -30,8 +30,10 @@ import math
 import png
 import random
 import sys
+import textwrap
 
 HEADER_SIZE = 9
+MAX_ENCODE_SIZE = 256 * 256 * 3 - HEADER_SIZE
 
 
 def decompose(num, bytes=3):
@@ -236,14 +238,40 @@ def perfect_fit(data_size, constraint=None):
 
 def main():
   parser = argparse.ArgumentParser(
-    description="With peng you can encode arbitrary data into a PNG image file.")
-  parser.add_argument('input', help='Input filename or "-" for stdin.')
-  parser.add_argument('output', help='Output filename or "-" for stdout.')
-  parser.add_argument('-d', action='store_true', help='Decode instead of encode.')
-  parser.add_argument('-c', '--compress', default=None, choices=('gz', 'zip', 'bz'))
-  parser.add_argument('-s', '--scale', type=int, default=1)
-  parser.add_argument('--width', type=int, help='Fixed width.')
-  parser.add_argument('--height', type=int, help='Fixed height.')
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description=textwrap.dedent("""
+      With `peng` you can encode arbitrary data to a PNG image file. The
+      data can optionally be compressed with zip, gzip or bzip2 to reduce
+      data size and generate a more colorful result (especially for plain
+      text data). The resulting PNG image file has only a slight overhead
+      over the original data, that being the PNG header plus 9 bytes of
+      the `peng` header information.
+
+      The amount of data that can be encoded with `peng` is limited to
+      196,599 bytes.
+      """))
+  parser.add_argument('input', help="input file or '-' for stdin")
+  parser.add_argument('output', help="output file or '-' for stdout")
+  parser.add_argument(
+    '-d', '--decode',
+    action='store_true',
+    help="decode input to output")
+  parser.add_argument(
+    '--compress',
+    default=None,
+    choices=('gz', 'zip', 'bz'),
+    help="compression method, omit for no compression")
+  parser.add_argument(
+    '--scale', type=int, default=1,
+    help="post-encode scaling, defaults to 1")
+  parser.add_argument('--width', type=int, help="fixed width (< 256)")
+  parser.add_argument('--height', type=int, help="fixed height (< 256)")
+  parser.add_argument(
+    '--fill',
+    choices=('repeat', 'zero', 'random'),
+    default='repeat',
+    help="padding fill method, defaults to repeat")
+  parser.add_argument('--seed', type=int, help="seed for the --fill=random mode")
   args = parser.parse_args()
 
   if args.input == '-':
@@ -255,7 +283,7 @@ def main():
   else:
     outfile = open(args.output, 'wb')
 
-  if args.d:
+  if args.decode:
     w, h, encoded_data, info = png.Reader(file=infile).read_flat()
     if info['alpha'] or info['bitdepth'] != 8:
       parser.error('input must be 8-bit RGB PNG file')
@@ -266,6 +294,8 @@ def main():
     outfile.write(data)
   else:
     data = infile.read()
+    if len(data) > MAX_ENCODE_SIZE:
+      parser.error('maximum encodable data size exceeded: {0} bytes'.format(len(data)))
     if args.compress is None:
       private = 0
     else:
@@ -284,8 +314,12 @@ def main():
     else:
       w = h = perfect_fit(len(data))
 
+    try:
+      data = encode(data, w, h, args.scale, private, fill=args.fill, seed=args.seed)
+    except ValueError as exc:
+      parser.error(str(exc))
     writer = png.Writer(w * args.scale, h * args.scale)
-    writer.write_array(outfile, encode(data, w, h, args.scale, private))
+    writer.write_array(outfile, data)
 
   infile.close()
   outfile.close()
