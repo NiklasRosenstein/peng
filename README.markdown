@@ -10,19 +10,25 @@ __DESCRIPTION__
 
 With peng you can encode arbitrary data into a PNG image file.
 
+```
 positional arguments:
 
-    input                 Input filename or "-" for stdin.
-    output                Output filename or "-" for stdout.
+  input                 Input filename or "-" for stdin.
+  output                Output filename or "-" for stdout.
 
 optional arguments:
 
-    -h, --help            show this help message and exit
-    -d                    Decode instead of encode.
-    -c {gz,zip,bz}, --compress {gz,zip,bz}
-    -s SCALE, --scale SCALE
-    --width WIDTH         Fixed width.
-    --height HEIGHT       Fixed height.
+  -h, --help            show this help message and exit
+  -d                    Decode instead of encode.
+  -c {gz,zip,bz}, --compress {gz,zip,bz}
+  -s SCALE, --scale SCALE
+  --width WIDTH         Fixed width.
+  --height HEIGHT       Fixed height.
+```
+
+__DEPENDENCIES__
+
+* [PyPNG](https://github.com/drj11/pypng)
 
 __EXAMPLES__
 
