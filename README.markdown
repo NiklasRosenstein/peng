@@ -8,7 +8,13 @@ __SYNOPSIS__
 
 __DESCRIPTION__
 
-With peng you can encode arbitrary data into a PNG image file.
+With peng you can encode arbitrary data to a PNG image file. The data can
+optionally be compressed with Zip, GZip or BZip in order zo reduce data size
+and generate a much more colorful result (especially for plain text data).
+The resulting file has the PNG header overhead plus the 3 firrst pixels (ie.
+9 bytes) for the peng header information.
+
+The anmount of data that can be encrypted is limited to 196,599 bytes.
 
 ```
 positional arguments:
