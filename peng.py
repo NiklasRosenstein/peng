@@ -22,7 +22,7 @@
 from __future__ import division, print_function
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas@gmail.com>'
-__version__ = '1.0.0'
+__version__ = '1.0.0-dev'
 
 import argparse
 import gzip, zlib, bz2
@@ -31,6 +31,9 @@ import png
 import random
 import sys
 import textwrap
+
+try: import brotli
+except ImportError: brotli = None
 
 HEADER_SIZE = 9
 MAX_ENCODE_SIZE = 256 * 256 * 3 - HEADER_SIZE
@@ -58,7 +61,8 @@ def compose(*values):
 def compress(data, level=9, method='gz'):
   """
   Compress *data* with the specified *method*. It can be ``'zip'``,
-  ``'gz'`` or ``'bz'``.
+  ``'gz'`` or ``'bz'``. If the :mod:`brotli` module is installed,
+  ``'brt'`` is also an accepted method.
 
   :raise ValueError: If an invalid *method* was supplied.
   """
@@ -69,6 +73,10 @@ def compress(data, level=9, method='gz'):
     return zlib.compress(data, level)
   elif method == 'bz':
     return bz2.compress(data, level)
+  elif method == 'brt':
+    if not brotli:
+      raise ImportError('brotli')
+    return brotli.compress(data)
   else:
     raise ValueError('invalid method: {0!r}'.format(method))
 
@@ -85,6 +93,10 @@ def decompress(data, method='gz'):
     return zlib.decompress(data)
   elif method == 'bz':
     return zlib.decompress(data)
+  elif method == 'brt':
+    if not brotli:
+      raise ImportError('brotli')
+    return brotli.decompress(bytes(data))
   else:
     raise ValueError('invalid method: {0!r}'.format(method))
 
@@ -259,7 +271,7 @@ def main():
   parser.add_argument(
     '--compress',
     default=None,
-    choices=('gz', 'zip', 'bz'),
+    choices=('gz', 'zip', 'bz', 'brt'),
     help="compression method, omit for no compression")
   parser.add_argument(
     '--scale', type=int, default=1,
@@ -283,6 +295,10 @@ def main():
   else:
     outfile = open(args.output, 'wb')
 
+  def check_method(method):
+    if method == 'brt' and not brotli:
+      parser.error('brotli compression module not installed')
+
   if args.decode:
     w, h, encoded_data, info = png.Reader(file=infile).read_flat()
     if info['alpha'] or info['bitdepth'] != 8:
@@ -290,9 +306,11 @@ def main():
     data, private = decode(encoded_data)
     if private != 0:
       method = ''.join(chr(c) for c in decompose(private)).strip()
+      check_method(method)
       data = decompress(data, method)
     outfile.write(data)
   else:
+    check_method(args.compress)
     data = infile.read()
     if len(data) > MAX_ENCODE_SIZE:
       parser.error('maximum encodable data size exceeded: {0} > {1} bytes'.format(len(data), MAX_ENCODE_SIZE))

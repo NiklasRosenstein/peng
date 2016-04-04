@@ -29,7 +29,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -d, --decode          decode input to output
-  --compress {gz,zip,bz}
+  --compress {gz,zip,bz,brt}
                         compression method, omit for no compression
   --scale SCALE         post-encode scaling, defaults to 1
   --width WIDTH         fixed width (< 256)
@@ -42,6 +42,7 @@ optional arguments:
 __DEPENDENCIES__
 
 * [PyPNG](https://github.com/drj11/pypng)
+* [brotlipy](https://pypi.python.org/pypi/brotlipy/0.2.0) - for `brt` compression
 
 __EXAMPLES__
 
